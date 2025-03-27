@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
+from pytils.translit import slugify
+
 from notes.forms import WARNING
 from notes.models import Note
 
@@ -64,6 +66,16 @@ class TestNoteCreation(TestCase):
         )
         note_count = Note.objects.count()
         self.assertEqual(note_count, self.notes_counts)
+
+    def test_empty_slug(self):
+        self.form_data.pop('slug')
+        response = self.auth_client.post(self.url_add, data=self.form_data)
+        self.assertRedirects(response, reverse('notes:success'))
+        note_count = Note.objects.count()
+        self.assertEqual(note_count, self.notes_counts + 1)
+        new_note = Note.objects.last()
+        expected_slug = slugify(self.form_data['title'])
+        self.assertEqual(new_note.slug, expected_slug)
 
 
 class TestNoteEditDelete(TestCase):
